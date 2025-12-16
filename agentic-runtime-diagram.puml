@@ -1,0 +1,25 @@
+@startuml
+skinparam componentStyle rectangle
+[API Gateway/WAF] as gw
+package ".NET Agent" {
+  [Orchestrator (Semantic Kernel)] as sk
+  [Tools/Skills] as tools
+  [Embedding Workers (KEDA)] as workers
+}
+[Vector DB (Postgres+pgvector)] as vec
+[Tachyon Gateway] as tachyon
+[Azure OpenAI] as aoai
+[KServe Models] as kserve
+[OpenTelemetry Export] as otel
+[Policy Controllers] as policy
+
+gw --> sk
+sk --> tools
+sk --> tachyon : prompts/completions
+tachyon --> aoai : primary
+tachyon --> kserve : fallback
+tools --> vec : RAG queries
+workers --> vec : ingest/embeddings
+sk --> otel
+sk --> policy
+@enduml

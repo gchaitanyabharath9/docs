@@ -1,0 +1,76 @@
+@startuml
+skinparam componentStyle rectangle
+package "IDP" {
+  [GitHub Actions (CI)] as gha
+  [Harness Pipelines] as harness
+  [Harness GitOps (Argo CD)] as argo
+}
+[Enterprise Registry] as registry
+[Vault] as vault
+[External Secrets Operator] as eso
+[Kyverno/Gatekeeper + Sigstore Policy] as policy
+[Observability Stack] as obs
+
+package "OpenShift Clusters" {
+  [DEV] as dev
+  [QA] as qa
+  [SIT] as sit
+  [UAT] as uat
+  [PTE] as pte
+  [PROD] as prod
+}
+
+[Tachyon Gateway] as tachyon
+[Azure OpenAI] as aoai
+[KServe Models] as kserve
+[Vector DB (Postgres+pgvector)] as vec
+
+gha --> registry : Push signed images + SBOM
+gha --> harness : Notify artifact digest
+harness --> argo : PRs to env-config\\nSync desired state
+argo --> dev
+argo --> qa
+argo --> sit
+argo --> uat
+argo --> pte
+argo --> prod
+
+vault --> eso
+eso --> dev
+eso --> qa
+eso --> sit
+eso --> uat
+eso --> pte
+eso --> prod
+
+policy -down-> dev
+policy -down-> qa
+policy -down-> sit
+policy -down-> uat
+policy -down-> pte
+policy -down-> prod
+
+obs -down-> dev
+obs -down-> qa
+obs -down-> sit
+obs -down-> uat
+obs -down-> pte
+obs -down-> prod
+
+dev --> tachyon
+qa --> tachyon
+sit --> tachyon
+uat --> tachyon
+pte --> tachyon
+prod --> tachyon
+
+tachyon --> aoai : primary
+tachyon --> kserve : fallback
+
+dev --> vec
+qa --> vec
+sit --> vec
+uat --> vec
+pte --> vec
+prod --> vec
+@enduml
